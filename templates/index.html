@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Text Summarization Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #f8f9fa;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            background: white;
+        }
+
+        textarea {
+            height: 100px;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #219150;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease-in-out;
+        }
+
+        button i {
+            margin-right: 10px;
+        }
+
+        .output-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            color: #f8f9fa;
+        }
+
+        .file-name {
+            font-size: 14px;
+            margin-top: 5px;
+            color: #f1c40f;
+        }
+
+        .logo {
+            width: 80px;
+            margin: 10px auto;
+            cursor: pointer;
+        }
+
+        .logout-container {
+            text-align: center;
+        }
+
+        .logout-btn, .view-data-btn {
+            background: #e74c3c; /* Red for logout */
+            width: auto;
+            padding: 10px 20px;
+            display: inline-flex;
+            margin: 0 10px;
+        }
+
+        .view-data-btn {
+            background: #3498db; /* Blue for view data */
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .view-data-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='img/muthoot.png') }}" alt="Logo" class="logo">
+
+    <h1>Clinical Text Summarization Tool</h1> 
+
+    <div class="container">
+        <h2>Upload Doctor's Note (Image)</h2>
+        <input type="file" id="imageInput" accept="image/*" onchange="showFileName('imageInput', 'imageFileName')">
+        <p id="imageFileName" class="file-name"></p>
+        <button onclick="performOCR()"><i class="fas fa-image"></i> Extract Text</button>
+    </div>
+
+    <div class="container">
+        <h2>Extracted Text</h2>
+        <div id="extractedText" class="output-box">The extracted text will appear here.</div>
+    </div>
+
+    <div class="container">
+        <h2>Enter Additional Text</h2>
+        <textarea id="additionalText" placeholder="Enter additional clinical text here..."></textarea>
+    </div>
+
+    <div class="container">
+        <h2>Upload Doctor-Patient Conversation (Audio)</h2>
+        <input type="file" id="audioInput" accept="audio/*" onchange="showFileName('audioInput', 'audioFileName')">
+        <p id="audioFileName" class="file-name"></p>
+        <button onclick="transcribeAudio()"><i class="fas fa-microphone"></i> Transcribe Audio</button>
+    </div>
+
+    <div class="container">
+        <h2>Transcription</h2>
+        <div id="transcription" class="output-box">The transcription will appear here.</div>
+    </div>
+
+    <div class="container">
+        <h2>Summarize Text</h2>
+        <button onclick="summarizeText()"><i class="fas fa-file-alt"></i> Summarize All Inputs</button>
+    </div>
+
+    <div class="container">
+        <h2>Summary</h2>
+        <div id="summary" class="output-box">The summary will appear here.</div>
+    </div>
+
+    <div class="logout-container">
+        <button class="logout-btn" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <button class="view-data-btn" onclick="window.location.href='/view_data'"><i class="fas fa-database"></i> View Stored Data</button>
+    </div>
+
+    <script>
+        let transcriptionText = "";
+
+        function showFileName(inputId, outputId) {
+            const fileInput = document.getElementById(inputId);
+            const fileNameDisplay = document.getElementById(outputId);
+            fileNameDisplay.textContent = fileInput.files.length > 0 ? `Selected: ${fileInput.files[0].name}` : "";
+        }
+
+        async function performOCR() {
+            const imageInput = document.getElementById('imageInput').files[0];
+            if (!imageInput) return alert("Please upload an image.");
+
+            const formData = new FormData();
+            formData.append('image', imageInput);
+
+            const response = await fetch('/ocr', { method: 'POST', body: formData });
+            const data = await response.json();
+            document.getElementById('extractedText').textContent = data.extracted_text || "No text found.";
+        }
+
+        async function summarizeText() {
+            const extractedText = document.getElementById('extractedText').textContent;
+            const additionalText = document.getElementById('additionalText').value.trim();
+
+            const response = await fetch('/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ocr_text: extractedText,
+                    additional_text: additionalText,
+                    transcription: transcriptionText
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById('summary').textContent = data.summary || "No summary available.";
+        }
+
+        async function transcribeAudio() {
+            const audioInput = document.getElementById('audioInput').files[0];
+            if (!audioInput) return alert("Please upload an audio file.");
+
+            const formData = new FormData();
+            formData.append('audio', audioInput);
+
+            const response = await fetch('/transcribe', { method: 'POST', body: formData });
+            const data = await response.json();
+            transcriptionText = data.transcription || "";
+            document.getElementById('transcription').textContent = transcriptionText;
+        }
+
+        function logoutUser() {
+            fetch('/logout', { method: 'GET' })
+                .then(() => {
+                    window.location.href = '/login';
+                })
+                .catch(error => {
+                    console.error('Logout failed:', error);
+                    alert('Logout failed. Please try again.');
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #2b5876, #4e4376);
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+        }
+        .logo {
+            width: 80px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #2b5876;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .input-container {
+            position: relative;
+            width: 100%;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #error-message {
+            color: red;
+            font-size: 14px;
+            display: none;
+        }
+        #loading {
+            display: none;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #2b5876;
+        }
+        .forgot-password {
+            font-size: 14px;
+            margin-top: 10px;
+            display: block;
+            color: #2b5876;
+            text-decoration: none;
+        }
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="{{ url_for('static', filename='img/muthoot.png') }}" alt="Logo" class="logo">
+        <h1>Admin Login</h1>
+        <input type="text" id="username" placeholder="Username" required>
+        <div class="input-container">
+            <input type="password" id="password" placeholder="Password" required>
+            <i class="fa fa-eye toggle-password" onclick="togglePassword()"></i>
+        </div>
+        <button id="login-btn" onclick="authenticateUser()">Login</button>
+        <p id="error-message">Invalid username or password</p>
+        <p id="loading">Logging in...</p>
+        <a href="#" class="forgot-password">Forgot password?</a>
+    </div>
+
+    <script>
+        function authenticateUser() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            const errorMessage = document.getElementById('error-message');
+            const loading = document.getElementById('loading');
+
+            errorMessage.style.display = "none";
+            loading.style.display = "block";
+            loginBtn.disabled = true;
+            loginBtn.style.opacity = "0.6";
+
+            setTimeout(() => {
+                fetch('/login', { 
+                    // Example of calling a backend for authentication
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = "/";
+                    } else {
+                        errorMessage.style.display = "block";
+                        loading.style.display = "none";
+                        loginBtn.disabled = false;
+                        loginBtn.style.opacity = "1";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessage.style.display = "block";
+                    errorMessage.textContent = "Something went wrong. Try again.";
+                    loading.style.display = "none";
+                    loginBtn.disabled = false;
+                    loginBtn.style.opacity = "1";
+                });
+            }, 1000); // Simulating delay
+        }
+
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const toggleIcon = document.querySelector('.toggle-password');
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = "password";
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>
